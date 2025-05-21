@@ -55,8 +55,8 @@ public class TileMap : MonoBehaviour
     void Start()
     {
         GenerateProceduralTilemap();
-        //TeleportPlayerToStart();
-        //InitPlayerRotation(playerStart.rotation);
+        TeleportPlayerToStart();
+        InitPlayerRotation(playerStart.rotation);
     }
 
     // Update is called once per frame

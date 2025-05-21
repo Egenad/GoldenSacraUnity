@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
@@ -29,6 +30,16 @@ public class Player : MonoBehaviour
     void Update()
     {
 
+    }
+
+    public void TouchDelta(InputAction.CallbackContext context)
+    {
+        Vector2 delta = context.ReadValue<Vector2>();
+        
+        if (Mathf.Abs(delta.y) > Mathf.Abs(delta.x) && delta.y < -50f)
+        {
+            MoveForward();
+        }
     }
     
     public void MoveForward() { /* ... */ }
