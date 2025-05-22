@@ -1,4 +1,5 @@
 using System.Collections;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -8,6 +9,7 @@ public class Player : MonoBehaviour
     public AnimationCurve movementCurve;
     public float movementDuration = 0.25f;
     private Coroutine moveCoroutine;
+    private Coroutine rotateCoroutine;
 
     public TileData currentTile;
     public Directions focusedTile = Directions.Up;
@@ -41,29 +43,51 @@ public class Player : MonoBehaviour
     {
         Vector2 delta = context.ReadValue<Vector2>();
 
-        if (Mathf.Abs(delta.y) > Mathf.Abs(delta.x) && delta.y < -50f)
+        if (Mathf.Abs(delta.y) > Mathf.Abs(delta.x))
         {
-            MoveForward();
+            if (delta.y < -50f)
+            {
+                MoveForward();
+            }
+            else if (delta.y > 50f)
+            {
+                TurnBack();
+            }
         }
+        else
+        {
+            if (delta.x < -50f)
+            {
+                TurnToDirection(Directions.Left);
+            }
+            else if (delta.x > 50f)
+            {
+                TurnToDirection(Directions.Right);
+            }
+        }
+    }
+
+    private TileData ObtainTileInDirection(Directions d)
+    {
+        TileData result = null;
+
+        foreach (NeighbourTile neighbour in currentTile.neighbours)
+        {
+            if (neighbour.direction == d)
+            {
+                result = neighbour.neighbour;
+                break;
+            }
+        }
+        return result;
     }
 
     public void MoveForward()
     {
-        TileData nextTile = null;
-
-        foreach (NeighbourTile neighbour in currentTile.neighbours)
-        {
-            if (neighbour.direction == focusedTile)
-            {
-                nextTile = neighbour.neighbour;
-                break;
-            }
-        }
+        TileData nextTile = ObtainTileInDirection(focusedTile);
 
         if (nextTile != null && !moving && myTurn)
         {
-            FindFirstObjectByType<Player>();
-
             Tile nextTileGO = nextTile.tileGO.GetComponent<Tile>();
 
             if (nextTileGO != null && nextTileGO.canStepUp && !nextTile.reserved)
@@ -80,61 +104,76 @@ public class Player : MonoBehaviour
         }
     }
 
-    public void TurnBack() { /* ... */ }
+    public void TurnBack()
+    {
+        int focused = (int)focusedTile + 2;
+
+        if (focused >= (int)Directions.End)
+        {
+            focused -= (int)Directions.End;
+        }
+
+        if (!moving && myTurn)
+        {
+            moving = true;
+            focusedTile = (Directions)focused;
+            targetRotation = (transform.rotation * Quaternion.Euler(0, 180, 0)).eulerAngles;
+            TurnPlayer();
+        }
+    }
 
     public void Interact() { /* ... */ }
 
     public void TurnLeft()
     {
-
+        TurnToDirection(Directions.Left);
     }
 
     public void TurnRight()
     {
-        /*Tile lastTile = currentTile.neighbours[focusedTile];
+        TurnToDirection(Directions.Right);
+    }
 
-        if (!moving)
+    private void TurnToDirection(Directions d)
+    {
+        if (!moving && myTurn)
         {
             moving = true;
+            int focused;
 
-            actualRotation = targetRotation = playerScene.rotation;
-            int focused = (int)focusedTile;
-
-            if (right)
+            if (d == Directions.Right)
             {
-                targetRotation *= Quaternion.Euler(0, 90, 0);
-                focused = (focused + 1) % D_END;
+                targetRotation = (transform.rotation * Quaternion.Euler(0, 90, 0)).eulerAngles;
+                focused = (int)focusedTile + 1;
+                if (focused >= (int)Directions.End)
+                {
+                    focused -= (int)Directions.End;
+                }
             }
             else
             {
-                targetRotation *= Quaternion.Euler(0, -90, 0);
-                focused = (focused - 1 + D_END) % D_END;
-            }
-
-            focusedTile = (Directions)focused;
-
-            // Start some kind of rotation tween (equiv. a turn_timeline)
-            // E.g., you could use DOTween or Lerp in Update
-
-            Tile nextTile = currentTile.neighbours[focusedTile];
-
-            if (nextTile != null)
-            {
-                nextTile.SeeTile();
-                SetEnemyHudVisibilityInTile(nextTile, true);
-
-                if (lastTile != null)
+                targetRotation = (transform.rotation * Quaternion.Euler(0, -90, 0)).eulerAngles;
+                focused = (int)focusedTile - 1;
+                if (focused < 0)
                 {
-                    SetEnemyHudVisibilityInTile(lastTile, false);
+                    focused = (int)Directions.End - 1;
                 }
             }
-        }*/
+            focusedTile = (Directions)focused;
+            TurnPlayer();
+        }
     }
 
-    public void MovePlayer()
+    private void MovePlayer()
     {
         if (moveCoroutine != null) StopCoroutine(moveCoroutine);
         moveCoroutine = StartCoroutine(MovePlayerCoroutine(targetPosition));
+    }
+
+    private void TurnPlayer()
+    {
+        if (rotateCoroutine != null) StopCoroutine(rotateCoroutine);
+        rotateCoroutine = StartCoroutine(RotatePlayerCoroutine(targetRotation));
     }
 
     private IEnumerator MovePlayerCoroutine(Vector3 targetPosition)
@@ -159,5 +198,28 @@ public class Player : MonoBehaviour
         moving = false;
         //myTurn = false;
         actualPosition = targetPosition;
+    }
+
+    private IEnumerator RotatePlayerCoroutine(Vector3 targetRotation)
+    {
+        Quaternion startRot = transform.rotation;
+
+        float time = 0f;
+
+        while (time < movementDuration)
+        {
+            float t = time / movementDuration;
+            float curveT = movementCurve.Evaluate(t);
+
+            transform.rotation = Quaternion.Slerp(startRot, Quaternion.Euler(targetRotation), curveT);
+
+            time += Time.deltaTime;
+            yield return null;
+        }
+
+        transform.rotation = Quaternion.Euler(targetRotation);
+        actualRotation = targetRotation;
+        rotateCoroutine = null;
+        moving = false;
     }
 }
