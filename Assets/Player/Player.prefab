@@ -270,9 +270,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1697314325609848922}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 5.04, z: 0}
-  m_LocalScale: {x: 0.74353, y: 1, z: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.946, y: 5.483, z: 3.97}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3626881410663953130}
@@ -301,9 +301,9 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5511662344119381535}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -1.6803777, y: 5.04, z: 2.9330003}
-  m_LocalScale: {x: 0.74353, y: 1, z: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -0.946, y: 5.483, z: 3.97}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3626881410663953130}
@@ -354,11 +354,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 66507ca8291e8a52c88a92621f1aab43, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  movementCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  movementDuration: 0.5
   focusedTile: 0
   actualRotation: {x: 0, y: 0, z: 0}
   targetRotation: {x: 0, y: 0, z: 0}
-  actualLocation: {x: 0, y: 0, z: 0}
-  targetLocation: {x: 0, y: 0, z: 0}
+  actualPosition: {x: 0, y: 0, z: 0}
+  targetPosition: {x: 0, y: 0, z: 0}
   moving: 0
 --- !u!114 &3759757597957199221
 MonoBehaviour:

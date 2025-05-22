@@ -74,7 +74,7 @@ public class Tile : MonoBehaviour
         return minimapRepresentation;
     }
 
-    public void StartGameHere()
+    /*public void StartGameHere()
     {
         if (canStart)
         {
@@ -84,7 +84,7 @@ public class Tile : MonoBehaviour
 
             foreach (TileData t in tilemap.tiles)
             {
-                if (t != null && t.startTile/* && t != this*/)
+                if (t != null && t.startTile && t != this)
                 {
                     t.startTile = false;
 
@@ -94,6 +94,7 @@ public class Tile : MonoBehaviour
             }
         }
     }
+    */
 
     /*public void ChangeTileTypeByType()
     {

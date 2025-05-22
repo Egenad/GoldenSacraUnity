@@ -104,8 +104,7 @@ public class TileTypeEntry
 public class NeighbourTile
 {
     public Directions direction;
-    public GameObject tile;
-    private TileData neighbour;
+    public TileData neighbour;
 
     public NeighbourTile(Directions direction, TileData neighbour)
     {
@@ -120,6 +119,7 @@ public class TileData
     public List<DirectionData> directions = new List<DirectionData>();
     public List<NeighbourTile> neighbours = new List<NeighbourTile>();
     public Coord position;
+    public GameObject tileGO = null;
     public bool startTile = false;
     public bool reserved = false;
 

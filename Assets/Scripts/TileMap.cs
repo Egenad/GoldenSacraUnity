@@ -27,9 +27,7 @@ public class TileMap : MonoBehaviour
     public List<ProceduralRoom> exits = new List<ProceduralRoom>();
 
     public Coord playerStartCoord = new Coord(0, 0);
-    public Vector3 playerStartRotation = Vector3.zero;
     public Player player;
-    public DirectionData playerStart = new DirectionData(new Coord(0, 0), Vector3.zero);
 
     private int width = 5;
     private int height = 5;
@@ -56,7 +54,7 @@ public class TileMap : MonoBehaviour
     {
         GenerateProceduralTilemap();
         TeleportPlayerToStart();
-        InitPlayerRotation(playerStart.rotation);
+        //InitPlayerRotation(playerStart.rotation);
     }
 
     // Update is called once per frame
@@ -82,17 +80,17 @@ public class TileMap : MonoBehaviour
     {
         DirectionData data;
 
-        data = new DirectionData(new Coord(0, -1), new Vector3(0f, 0f, -90f));
-        directionMap.Add(Directions.Up, data);
-
-        data = new DirectionData(new Coord(0, 1), new Vector3(0f, 0f, 90f));
-        directionMap.Add(Directions.Down, data);
-
-        data = new DirectionData(new Coord(-1, 0), new Vector3(0f, 0f, 180f));
+        data = new DirectionData(new Coord(-1, 0), new Vector3(0f, -90f, 0));
         directionMap.Add(Directions.Left, data);
 
-        data = new DirectionData(new Coord(1, 0), new Vector3(0f, 0f, 0f));
+        data = new DirectionData(new Coord(1, 0), new Vector3(0f, 90f, 0f));
         directionMap.Add(Directions.Right, data);
+
+        data = new DirectionData(new Coord(0, -1), new Vector3(0f, 180f, 0f));
+        directionMap.Add(Directions.Down, data);
+
+        data = new DirectionData(new Coord(0, 1), new Vector3(0f, 0f, 0f));
+        directionMap.Add(Directions.Up, data);
     }
 
     void TeleportPlayerToStart()
@@ -104,22 +102,7 @@ public class TileMap : MonoBehaviour
 
         if (player != null)
         {
-            bool teleported = false;
-
-            foreach (TileData tile in tiles)
-            {
-                if (tile != null && tile.startTile)
-                {
-                    TeleportPlayerToTile(tile.position);
-                    teleported = true;
-                    break;
-                }
-            }
-
-            if (!teleported)
-            {
-                TeleportPlayerToTile(playerStart.direction);
-            }
+            TeleportPlayerToTile(playerStartCoord);
         }
     }
 
@@ -158,18 +141,18 @@ public class TileMap : MonoBehaviour
                 Vector3 position = new Vector3(targetTile.position.x * tileSize, 0f, targetTile.position.y * tileSize);
 
                 player.transform.position = position;
-                player.actualLocation = position;
+                player.actualPosition = position;
             }
         }
     }
 
-    void InitPlayerRotation(Vector3 rotation)
+    /*void InitPlayerRotation(Vector3 rotation)
     {
         if (player != null)
         {
-            bool success = false;
+            bool success;
             Directions newDirection = GetDirectionByRotation(rotation, out success);
-            Vector3 newRotation = new Vector3(0f, 0f, -90f);
+            Vector3 newRotation = new Vector3(0f, -90f, 0f);
 
             if (success)
             {
@@ -178,17 +161,18 @@ public class TileMap : MonoBehaviour
 
             player.transform.rotation = Quaternion.Euler(newRotation);
             player.focusedTile = newDirection;
+            Debug.Log("Player rotation: " + player.transform.rotation.eulerAngles + " Direction: " + player.focusedTile);
         }
-    }
+    }*/
 
     Directions GetDirectionByRotation(Vector3 rotation, out bool success)
     {
         const float epsilon = 0.01f;
-        float r_z = rotation.y;
+        float r_y = rotation.y;
 
         foreach (var kvp in directionMap)
         {
-            if (Mathf.Abs(kvp.Value.rotation.y - r_z) < epsilon)
+            if (Mathf.Abs(kvp.Value.rotation.y - r_y) < epsilon)
             {
                 success = true;
                 return kvp.Key;
@@ -242,10 +226,11 @@ public class TileMap : MonoBehaviour
 
             GameObject newTypePrefab = GetTilePrefabByType(tile.type);
             Vector3 locationToSpawn = new Vector3(tile.position.x * tileSize, 0f, tile.position.y * tileSize);
-            
+
             GameObject newTileGO = Instantiate(newTypePrefab, locationToSpawn, Quaternion.identity, transform.parent);
-            tilesGOs.Add(newTileGO.GetComponent<Tile>()); 
-            
+            tile.tileGO = newTileGO;
+            Tile newTile = newTileGO.GetComponent<Tile>();
+            newTile.position = tile.position;
         }
 
         proceduralCreation = false;
@@ -325,7 +310,7 @@ public class TileMap : MonoBehaviour
                 break;
         }
 
-        if (CreateRoom(xRoom, yRoom, roomWidth, roomHeight, TileType.Terrain))
+        if (CreateRoom(xRoom, yRoom, roomWidth, roomHeight, TileType.Terrain, init))
         {
             // Save the room itself
             ProceduralRoom firstRoom = new ProceduralRoom(new Coord(xRoom, yRoom), roomWidth, roomHeight, RoomType.Room);
@@ -351,7 +336,7 @@ public class TileMap : MonoBehaviour
         return false;
     }
 
-    bool CreateRoom(int x, int y, int newWidth, int newHeight, TileType tileType)
+    bool CreateRoom(int x, int y, int newWidth, int newHeight, TileType tileType, bool init)
     {
         if (x < 1 || y < 1 || x + newWidth > proceduralWidth - 1 || y + newHeight > proceduralHeight - 1)
             return false;
@@ -366,6 +351,8 @@ public class TileMap : MonoBehaviour
                     return false;
             }
         }
+        
+        List<TileData> tilesToStart = new List<TileData>();
 
         //  Create the room
         for (int i = x - 1; i < x + newWidth + 1; i++)
@@ -381,9 +368,21 @@ public class TileMap : MonoBehaviour
                         tile.type = tileType;
                     }
 
-                    //tile.ChangeTileTypeByType();
-                    //Destroy(tile);
+                    if (tile.CanStart() && init)
+                    {
+                        tilesToStart.Add(tile);
+                    }
                 }
+            }
+        }
+
+        if(init && tilesToStart.Count > 0)
+        {
+            int randomIndex = Random.Range(0, tilesToStart.Count);
+            TileData startTile = tilesToStart[randomIndex];
+            if(startTile != null)
+            {
+                playerStartCoord = startTile.position;
             }
         }
 
@@ -590,7 +589,7 @@ public class TileMap : MonoBehaviour
                     break;
             }
 
-            if(CreateRoom(corridor.coordinates.x, corridor.coordinates.y, corridor.width, corridor.height, TileType.Terrain))
+            if(CreateRoom(corridor.coordinates.x, corridor.coordinates.y, corridor.width, corridor.height, TileType.Terrain, false))
             {
                 // Save the room itself
                 rooms.Add(corridor);
